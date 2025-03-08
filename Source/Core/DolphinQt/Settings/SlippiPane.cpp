@@ -13,11 +13,9 @@
 
 #include "DolphinQt/QtUtils/NonDefaultQPushButton.h"
 
-#ifndef IS_PLAYBACK
 #include "Core/HW/EXI/EXI.h"
 #include "Core/HW/EXI/EXI_DeviceSlippi.h"
 #include "SlippiPane.h"
-#endif
 
 SlippiPane::SlippiPane(QWidget* parent) : QWidget(parent)
 {
@@ -221,7 +219,7 @@ void SlippiPane::LoadConfig()
 
   m_music_volume_slider->setDisabled(!enable_jukebox);
 #else
-  // HOOKUP PLAYBACK STUFF
+  // slippitodo: HOOKUP PLAYBACK STUFF
 #endif
 }
 
@@ -250,7 +248,7 @@ void SlippiPane::ConnectLayout()
   connect(m_music_volume_slider, qOverload<int>(&QSlider::valueChanged), this,
           &SlippiPane::OnMusicVolumeUpdate);
 #else
-  // HOOKUP PLAYBACK STUFF
+  // slippitodo: HOOKUP PLAYBACK STUFF
 #endif
 }
 

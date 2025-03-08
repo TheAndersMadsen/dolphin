@@ -55,7 +55,7 @@ void SetObscuredPixelsLeft(int width);
 void SetObscuredPixelsTop(int height);
 
 // Draw playback controls when playing Slippi replays
-#ifdef IS_PLAYBACK
-void DrawSlippiPlaybackControls();
-#endif
+// #ifdef IS_PLAYBACK
+// void DrawSlippiPlaybackControls();
+// #endif
 }  // namespace OSD
