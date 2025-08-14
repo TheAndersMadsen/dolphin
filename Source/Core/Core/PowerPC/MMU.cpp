@@ -42,6 +42,7 @@
 #include "Core/HW/GPFifo.h"
 #include "Core/HW/MMIO.h"
 #include "Core/HW/Memmap.h"
+#include "Core/Debugger/Debugger_SymbolMap.h"
 #include "Core/HW/ProcessorInterface.h"
 #include "Core/PowerPC/GDBStub.h"
 #include "Core/PowerPC/JitInterface.h"
@@ -806,8 +807,38 @@ std::optional<ReadResult<u32>> MMU::HostTryReadInstruction(const Core::CPUThread
   return std::nullopt;
 }
 
+
 void MMU::Memcheck(u32 address, u64 var, bool write, size_t size)
 {
+  static std::unordered_map<std::string, bool> already_checked = {};
+
+  if (write && address >= 0x80bb0000 && address <= 0x811AD5A0)
+  {
+    auto& system = Core::System::GetInstance();
+    ASSERT(Core::IsCPUThread());
+    Core::CPUThreadGuard guard(system);
+    std::vector<Dolphin_Debugger::CallstackEntry> entries;
+    Dolphin_Debugger::GetCallstack(guard, entries);
+
+    std::string key = fmt::format("{:08x}", m_ppc_state.pc);
+    for (Dolphin_Debugger::CallstackEntry entry : entries)
+    {
+      key = fmt::format("{}-{:08x}", key, entry.vAddress);
+    }
+
+    if (!already_checked[key])
+    {
+      // Execute log
+      ERROR_LOG_FMT(MEMMAP, "Write to address: {:08x}. Size: {}. PC: {:08x}", address, size,
+                    m_ppc_state.pc);
+      for (Dolphin_Debugger::CallstackEntry entry : entries)
+      {
+        WARN_LOG_FMT(MEMMAP, "{} | {}", entry.vAddress, entry.Name);
+      }
+      already_checked[key] = true;
+    }
+  }
+  
   if (!m_power_pc.GetMemChecks().HasAny())
     return;
 
