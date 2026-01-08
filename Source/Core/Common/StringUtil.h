@@ -209,6 +209,7 @@ std::u16string UTF8ToUTF16(std::string_view input);
 
 // slippi change
 std::u32string UTF8ToUTF32(const std::string& input);
+std::string UTF32toUTF8(const std::u32string& input)
 // slippi change: end
 
 #ifdef __APPLE__
