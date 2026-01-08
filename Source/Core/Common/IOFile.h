@@ -52,8 +52,6 @@ public:
 
   bool Close();
 
-  IOFile Duplicate(const char openmode[]) const;
-
   template <typename T>
   requires(std::is_trivially_copyable_v<T>)
   bool ReadArray(T* elements, size_t count, size_t* num_read = nullptr)
