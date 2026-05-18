@@ -2319,11 +2319,11 @@ void CEXISlippi::prepareOnlineMatchState()
     INFO_LOG_FMT(SLIPPI_ONLINE, "Rng Offset: {:#x}", rng_offset);
 
     // Check if everyone is the same color
-    auto color = ordered_selections[0]->team_id;
+    auto first_team_id = ordered_selections[0]->team_id;
     bool are_all_same_team = true;
     for (const auto& s : ordered_selections)
     {
-      if (s->team_id != color)
+      if (s->team_id != first_team_id)
         are_all_same_team = false;
     }
 
