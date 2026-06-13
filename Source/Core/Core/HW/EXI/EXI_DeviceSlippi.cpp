@@ -2112,6 +2112,44 @@ void CEXISlippi::prepareOnlineMatchState()
 
   m_read_queue.push_back(mm_state);  // Matchmaking State
 
+  // Push the current matchmaking state to Discord Rich Presence so menu and
+  // queue presence is driven by C++ state instead of reading RAM. Skipped
+  // entirely when the feature is off so it costs nothing on this hot path.
+  if (m_discord_rpc_enabled)
+  {
+    std::string discord_opp_name = "";
+    s8 discord_opp_rank = -1;
+
+    // Look up the opponent only in a real 1v1 match. Player info isn't
+    // populated before then, and teams has no single opponent.
+    if (matchmaking && (mm_state == SlippiMatchmaking::ProcessState::OPPONENT_CONNECTING ||
+                        mm_state == SlippiMatchmaking::ProcessState::CONNECTION_SUCCESS))
+    {
+      auto discord_players = matchmaking->GetPlayerInfo();
+      std::string discord_local_code = user->GetUserInfo().connect_code;
+      int discord_remote_count = 0;
+      u8 discord_opp_idx = 0;
+      for (u8 i = 0; i < discord_players.size(); i++)
+      {
+        if (discord_players[i].connect_code != discord_local_code)
+        {
+          discord_remote_count++;
+          discord_opp_idx = i;
+        }
+      }
+
+      if (discord_remote_count == 1)
+      {
+        discord_opp_name = matchmaking->GetPlayerName(discord_opp_idx);
+        discord_opp_rank = static_cast<s8>(matchmaking->GetPlayerRank(discord_opp_idx));
+      }
+    }
+
+    slprs_exi_device_update_matchmaking_state(slprs_exi_device_ptr, static_cast<u8>(mm_state),
+                                              static_cast<u8>(last_search.mode),
+                                              discord_opp_name.c_str(), discord_opp_rank);
+  }
+
   u8 local_player_ready = local_selections.is_character_selected;
   u8 remote_players_ready = 0;
 
@@ -3323,6 +3361,20 @@ void CEXISlippi::DMAWrite(u32 _uAddr, u32 _uSize)
 {
   auto& system = Core::System::GetInstance();
   auto& memory = system.GetMemory();
+
+  // Configure Discord Rich Presence the first time we get here. Menu / queue /
+  // matchmaking presence is pushed via slprs_exi_device_update_matchmaking_state,
+  // and the in-game half rides the replay-data path, so no memory pointer is
+  // needed.
+  if (!m_discord_rpc_configured)
+  {
+    m_discord_rpc_enabled = Config::Get(Config::SLIPPI_ENABLE_DISCORD_RPC);
+    bool show_local_rank = Config::Get(Config::SLIPPI_ENABLE_RANK_LOCAL);
+    slprs_exi_device_configure_discord_rpc(slprs_exi_device_ptr, m_discord_rpc_enabled,
+                                           show_local_rank);
+    m_discord_rpc_configured = true;
+  }
+
   u8* mem_ptr = memory.GetPointerForRange(_uAddr, _uSize);
 
   u32 buf_loc = 0;
